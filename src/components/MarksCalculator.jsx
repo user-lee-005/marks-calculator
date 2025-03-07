@@ -11,88 +11,47 @@ function MarksCalculator() {
   const calculateValues = () => {
     const total = parseFloat(totalMarks);
     const obtained = parseFloat(obtainedMarks);
-
-    if (isNaN(total) || isNaN(obtained)) return null;
-    if (total <= 0) return null;
-    if (obtained < 0 || obtained > total) return null;
-
+    if (
+      isNaN(total) ||
+      isNaN(obtained) ||
+      total <= 0 ||
+      obtained < 0 ||
+      obtained > total
+    )
+      return null;
     return {
       percentage: (obtained / total) * 100,
       sa: parseInt((obtained / total) * 60),
     };
   };
 
-  const calculateTotalMarks = (faMarks, saMarks) => {
-    return parseInt(faMarks) + parseInt(saMarks);
-  }
-
   const calculatePercentageForFA = () => {
-    const total = 40;
     const obtained = parseInt(faMarks);
+    if (isNaN(obtained)) return null;
+    return { percentage: (obtained / 40) * 100, marks: obtained };
+  };
 
-    if (isNaN(total) || isNaN(obtained)) return null;
-    if (total <= 0) return null;
-    if (obtained < 0 || obtained > total) return null;
-
-    return {
-      percentage: (obtained / total) * 100,
-      marks: obtained,
+  const getGrade = (marks, type) => {
+    const thresholds = {
+      FA: [36, 32, 28, 24, 20, 16, 12, 8],
+      SA: [54, 48, 42, 36, 30, 24, 18, 12],
+      Total: [90, 80, 70, 60, 50, 40, 32, 20],
     };
-  };
-
-  const getGradeAndFeedbackForFA = (marks) => {
-    if (marks > 36) return { grade: "A1" };
-    if (marks > 32) return { grade: "A2" };
-    if (marks > 28) return { grade: "B1" };
-    if (marks > 24) return { grade: "B2" };
-    if (marks > 20) return { grade: "C1" };
-    if (marks > 16) return { grade: "C2" };
-    if (marks > 12) return { grade: "D" };
-    if (marks > 8) return { grade: "E1" };
-    return { grade: "E2" };
-  };
-
-  const getGradeAndFeedbackForSA = (marks) => {
-    if (marks > 54) return { grade: "A1" };
-    if (marks > 48) return { grade: "A2" };
-    if (marks > 42) return { grade: "B1" };
-    if (marks > 36) return { grade: "B2" };
-    if (marks > 30) return { grade: "C1" };
-    if (marks > 24) return { grade: "C2" };
-    if (marks > 18) return { grade: "D" };
-    if (marks > 12) return { grade: "E1" };
-    return { grade: "E2" };
-  };
-
-  const getGradeAndFeedbackForTotal = (percentage) => {
-    console.log(percentage)
-    if (percentage > 90) return { grade: "A1" };
-    if (percentage > 80) return { grade: "A2" };
-    if (percentage > 70) return { grade: "B1" };
-    if (percentage > 60) return { grade: "B2" };
-    if (percentage > 50) return { grade: "C1" };
-    if (percentage > 40) return { grade: "C2" };
-    if (percentage > 32) return { grade: "D" };
-    if (percentage > 20) return { grade: "E1" };
-    return { grade: "E2" };
+    const grades = ["A1", "A2", "B1", "B2", "C1", "C2", "D", "E1", "E2"];
+    const index = thresholds[type].findIndex((threshold) => marks > threshold);
+    return grades[index >= 0 ? index : grades.length - 1];
   };
 
   const handleCalculate = (e) => {
     e.preventDefault();
-    if (!totalMarks || !obtainedMarks || !faMarks) {
+    if (!totalMarks || !obtainedMarks || !faMarks)
       setError("Please fill in all fields");
-      return;
-    }
-    setError("");
+    else setError("");
   };
 
   const results = calculateValues();
   const faResults = calculatePercentageForFA();
-  const gradeInfo = results
-    ? getGradeAndFeedbackForTotal(calculateTotalMarks(faMarks, results.sa))
-    : null;
-  const faGrade = faResults ? getGradeAndFeedbackForFA(faResults?.marks) : null;
-  const saGrade = results ? getGradeAndFeedbackForSA(results?.sa) : null;
+  const totalMarksCalculated = (parseInt(faMarks) || 0) + (results?.sa || 0);
 
   return (
     <div className="calculator-container">
@@ -100,7 +59,7 @@ function MarksCalculator() {
       <form onSubmit={handleCalculate}>
         <div className="input-group">
           <label>
-            Total Marks:
+            Total Marks:{" "}
             <input
               type="number"
               step="0.01"
@@ -110,10 +69,22 @@ function MarksCalculator() {
             />
           </label>
         </div>
-
         <div className="input-group">
           <label>
-            Marks Obtained:
+            FA Marks:{" "}
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="40"
+              value={faMarks}
+              onChange={(e) => setFaMarks(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="input-group">
+          <label>
+            SA Marks:{" "}
             <input
               type="number"
               step="0.01"
@@ -124,21 +95,6 @@ function MarksCalculator() {
             />
           </label>
         </div>
-
-        <div className="input-group">
-          <label>
-            FA Marks:
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              max={"40"}
-              value={faMarks}
-              onChange={(e) => setFaMarks(e.target.value)}
-            />
-          </label>
-        </div>
-
         {error && <div className="error">{error}</div>}
         <button type="submit">Calculate</button>
       </form>
@@ -161,7 +117,7 @@ function MarksCalculator() {
               </tr>
               <tr>
                 <th>FA Grade</th>
-                <td>{faGrade?.grade}</td>
+                <td>{getGrade(faResults?.marks, "FA")}</td>
               </tr>
               <tr>
                 <th>SA (60)</th>
@@ -169,17 +125,15 @@ function MarksCalculator() {
               </tr>
               <tr>
                 <th>SA Grade</th>
-                <td>{saGrade?.grade}</td>
+                <td>{getGrade(results.sa, "SA")}</td>
               </tr>
               <tr>
                 <th>Total Marks (100)</th>
-                <td>{calculateTotalMarks(faMarks, results.sa)}</td>
+                <td>{totalMarksCalculated}</td>
               </tr>
               <tr>
                 <th>Grade</th>
-                <td>
-                  {gradeInfo.grade}
-                </td>
+                <td>{getGrade(totalMarksCalculated, "Total")}</td>
               </tr>
             </tbody>
           </table>
