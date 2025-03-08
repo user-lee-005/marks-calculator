@@ -1,12 +1,21 @@
 "use client";
 import React, { useState } from "react";
 import "./MarksCalculator.css";
+import StudentReportTable from "./StudentsDataTable";
+import ErrorModal from "./ErrorModal";
 
 function MarksCalculator() {
   const [totalMarks, setTotalMarks] = useState("");
   const [obtainedMarks, setObtainedMarks] = useState("");
   const [faMarks, setFaMarks] = useState("");
+  const [rollNo, setRollNo] = useState("");
   const [error, setError] = useState("");
+  const [studentsData, setStudentsData] = useState([]);
+  const [showStudentsData, setShowStudentsData] = useState(false);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [className, setClassName] = useState("");
+  const [showError, setShowError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const calculateValues = () => {
     const total = parseFloat(totalMarks);
@@ -47,9 +56,44 @@ function MarksCalculator() {
 
   const handleCalculate = (e) => {
     e.preventDefault();
-    if (!totalMarks || !obtainedMarks || !faMarks)
+    if (!totalMarks || !obtainedMarks || !faMarks || !rollNo)
       setError("Please fill in all fields");
     else setError("");
+  };
+
+  const handleAddStudents = () => {
+    console.log("clicked");
+    if (totalStudents == 0) {
+      setShowError(true);
+      setErrorMsg("Please enter total number of students");
+      return;
+    }
+
+    const studentData = {
+      rollNumber: rollNo,
+      faMarks: faMarks,
+      saMarks: results?.sa,
+      faGrade: getGrade(faResults?.marks, "FA"),
+      saGrade: getGrade(results?.sa, "SA"),
+      totalMarks: totalMarksCalculated,
+      totalGrade: getGrade(totalMarksCalculated, "Total"),
+    };
+
+    setStudentsData((prev) => {
+      const existingStudentIndex = prev.findIndex(
+        (student) => student.rollNumber === rollNo
+      );
+
+      if (existingStudentIndex !== -1) {
+        const updatedStudents = [...prev];
+        updatedStudents[existingStudentIndex] = studentData;
+        return updatedStudents;
+      } else {
+        return [...prev, studentData];
+      }
+    });
+
+    setShowStudentsData(true);
   };
 
   const results = calculateValues();
@@ -63,6 +107,27 @@ function MarksCalculator() {
       <form onSubmit={handleCalculate}>
         <div className="input-group">
           <label>
+            Class:{" "}
+            <input
+              value={className}
+              onChange={(e) => setClassName(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="input-group">
+          <label>
+            Total Students:{" "}
+            <input
+              type="number"
+              step="1"
+              min="1"
+              value={totalStudents}
+              onChange={(e) => setTotalStudents(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="input-group">
+          <label>
             Total Marks:{" "}
             <input
               type="number"
@@ -70,6 +135,18 @@ function MarksCalculator() {
               min="1"
               value={totalMarks}
               onChange={(e) => setTotalMarks(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="input-group">
+          <label>
+            Roll No:{" "}
+            <input
+              type="number"
+              step="1"
+              min="1"
+              value={rollNo}
+              onChange={(e) => setRollNo(e.target.value)}
             />
           </label>
         </div>
@@ -90,6 +167,7 @@ function MarksCalculator() {
           <label>
             SA Marks:{" "}
             <input
+              type="number"
               step="0.01"
               min="0"
               max={totalMarks || ""}
@@ -97,6 +175,11 @@ function MarksCalculator() {
               onChange={(e) => setObtainedMarks(e.target.value)}
             />
           </label>
+        </div>
+        <div>
+          <button type="button" onClick={handleAddStudents}>
+            Add Student
+          </button>
         </div>
         {error && <div className="error">{error}</div>}
         <button type="submit">Calculate</button>
@@ -132,6 +215,20 @@ function MarksCalculator() {
           </tbody>
         </table>
       </div>
+
+      <div>
+        {showStudentsData && (
+          <StudentReportTable
+            studentsData={studentsData || []}
+            filename={className}
+            totalStudents={totalStudents}
+          />
+        )}
+      </div>
+
+      {showError && (
+        <ErrorModal message={errorMsg} closeModal={setShowError(false)} />
+      )}
     </div>
   );
 }
